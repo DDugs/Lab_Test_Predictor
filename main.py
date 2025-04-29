@@ -3,11 +3,13 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import shutil
+import pytesseract
 import os
 import joblib
 from extractor import extract_lab_data_from_image
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 model = joblib.load('lab_test_model.pkl')
 test_names = ["HEMOGLOBIN", "RBC", "WBC", "PLATELET COUNT", "MCV", "MCH", "MCHC", "NEUTROPHILS"]

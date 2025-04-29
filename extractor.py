@@ -3,6 +3,8 @@ import cv2
 import re
 from PIL import Image
 
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+
 def extract_lab_data_from_image(image_path):
     image = cv2.imread(image_path)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
