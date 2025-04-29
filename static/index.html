@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab Test Prediction</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg">
+    <h1 class="text-2xl font-bold text-center text-blue-700 mb-6">Upload Lab Report</h1>
+    <form id="upload-form" class="flex flex-col space-y-4">
+      <input type="file" id="file-input" name="file" class="border border-gray-300 p-2 rounded" required />
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl transition-all">Upload & Predict</button>
+    </form>
+
+    <div class="mt-6">
+      <nav class="flex border-b border-gray-200">
+        <button class="py-2 px-4 text-blue-600 border-b-2 border-blue-600 focus:outline-none" data-tab="list">Results</button>
+        <button class="py-2 px-4 text-gray-600 hover:text-blue-600 focus:outline-none" data-tab="json">JSON</button>
+      </nav>
+      <div id="tab-content" class="mt-4">
+        <div id="content-list">
+          <ul id="results-list" class="list-disc list-inside text-gray-800 space-y-1"></ul>
+        </div>
+
+        <div id="content-json" class="hidden">
+          <pre id="results-json" class="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-64"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div id="error" class="text-red-600 mt-4 hidden"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("upload-form");
+    const errorDiv = document.getElementById("error");
+    const tabButtons = document.querySelectorAll('[data-tab]');
+    const contentList = document.getElementById("content-list");
+    const contentJson = document.getElementById("content-json");
+    const resultsList = document.getElementById("results-list");
+    const resultsJson = document.getElementById("results-json");
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.replace('border-blue-600', 'border-transparent'));
+        tabButtons.forEach(b => b.classList.replace('text-blue-600', 'text-gray-600'));
+        btn.classList.replace('text-gray-600', 'text-blue-600');
+        btn.classList.replace('border-transparent', 'border-blue-600');
+        if (btn.dataset.tab === 'list') {
+          contentList.classList.remove('hidden');
+          contentJson.classList.add('hidden');
+        } else {
+          contentList.classList.add('hidden');
+          contentJson.classList.remove('hidden');
+        }
+      });
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      resultsList.innerHTML = "";
+      resultsJson.textContent = "";
+      errorDiv.classList.add("hidden");
+
+      const formData = new FormData();
+      const fileInput = document.getElementById("file-input");
+      formData.append("file", fileInput.files[0]);
+
+      try {
+        const response = await fetch("/get-lab-tests", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        if (data.is_success) {
+          data.lab_test_data.forEach((test) => {
+            const item = document.createElement("li");
+            item.textContent = `${test.test_name}: ${test.value} (${test.lab_test_out_of_range ? 'Out of Range' : ' Normal'})`;
+            resultsList.appendChild(item);
+          });
+          resultsJson.textContent = JSON.stringify(data.lab_test_data, null, 2);
+          tabButtons[0].click();
+        } else {
+          throw new Error(data.error || "Unknown error");
+        }
+      } catch (err) {
+        errorDiv.textContent = "Error: " + err.message;
+        errorDiv.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
